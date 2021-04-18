@@ -3,7 +3,7 @@
 dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
-.RB [ \-bfivP ]
+.RB [ \-bfivPS ]
 .RB [ \-g
 .IR columns ]
 .RB [ \-l
@@ -72,6 +72,9 @@ dmenu matches menu items case insensitively.
 .TP
 .B \-P
 dmenu will not directly display the keyboard input, but instead replace it with dots. All data from stdin will be ignored.
+.TP
+.B \-S
+dmenu does not sort menu items after matching.
 .TP
 .BI \-g " columns"
 dmenu lists items in a grid with the given number of columns.
