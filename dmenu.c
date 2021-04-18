@@ -79,8 +79,9 @@ static size_t histsz, histpos;
 
 #include "config.h"
 
-static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
-static char *(*fstrstr)(const char *, const char *) = strstr;
+static char * cistrstr(const char *s, const char *sub);
+static int (*fstrncmp)(const char *, const char *, size_t) = strncasecmp;
+static char *(*fstrstr)(const char *, const char *) = cistrstr;
 
 static int
 issel(size_t id)
@@ -1358,12 +1359,12 @@ main(int argc, char *argv[])
 			centered = 1;
 		else if (!strcmp(argv[i], "-F"))   /* disables fuzzy matching */
 			fuzzy = 0;
-		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
-			fstrncmp = strncasecmp;
-			fstrstr = cistrstr;
-		} else if (!strcmp(argv[i], "-r"))
+		else if (!strcmp(argv[i], "-r"))
 			restrict_return = 1;
-		else if (!strcmp(argv[i], "-R")) /* reject input which results in no match */
+		else if (!strcmp(argv[i], "-s")) { /* case-sensitive item matching */
+			fstrncmp = strncmp;
+			fstrstr = strstr;
+		} else if (!strcmp(argv[i], "-R")) /* reject input which results in no match */
 			reject_no_match = 1;
 		else if (!strcmp(argv[i], "-P"))   /* is the input a password */
 		        passwd = 1;
