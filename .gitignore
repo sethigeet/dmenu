@@ -2,3 +2,5 @@ patches
 dmenu
 *.o
 stest
+*.orig
+*.rej
