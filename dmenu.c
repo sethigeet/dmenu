@@ -38,7 +38,7 @@ enum { SchemeNorm, SchemeSel, SchemeNormHighlight, SchemeSelHighlight,
 struct item {
 	char *text;
 	struct item *left, *right;
-	int out;
+	int id; /* for multiselect */
 	double distance;
 };
 
@@ -58,6 +58,8 @@ static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 static bool sortmatches = true;
+static int *selid = NULL;
+static unsigned int selidsize = 0;
 
 static Atom clip, utf8;
 static Display *dpy;
@@ -79,6 +81,16 @@ static size_t histsz, histpos;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
+
+static int
+issel(size_t id)
+{
+	for (int i = 0;i < selidsize;i++)
+		if (selid[i] == id)
+			return 1;
+	return 0;
+}
+
 
 static void
 appenditem(struct item *item, struct item **list, struct item **last)
@@ -131,6 +143,7 @@ cleanup(void)
 	drw_free(drw);
 	XSync(dpy, False);
 	XCloseDisplay(dpy);
+	free(selid);
 }
 
 static char *
@@ -189,7 +202,7 @@ drawitem(struct item *item, int x, int y, int w)
 	int r;
 	if (item == sel)
 		drw_setscheme(drw, scheme[SchemeSel]);
-	else if (item->out)
+	else if (issel(item->id))
 		drw_setscheme(drw, scheme[SchemeOut]);
 	else
 		drw_setscheme(drw, scheme[SchemeNorm]);
@@ -718,6 +731,20 @@ keypress(XKeyEvent *ev)
 			goto draw;
 		case XK_Return:
 		case XK_KP_Enter:
+			if (sel && issel(sel->id)) {
+				for (int i = 0;i < selidsize;i++)
+					if (selid[i] == sel->id)
+						selid[i] = -1;
+			} else {
+				for (int i = 0;i < selidsize;i++)
+					if (selid[i] == -1) {
+						selid[i] = sel->id;
+						return;
+					}
+				selidsize++;
+				selid = realloc(selid, (selidsize + 1) * sizeof(int));
+				selid[selidsize - 1] = sel->id;
+			}
 			break;
 		case XK_bracketleft:
 			cleanup();
@@ -841,15 +868,26 @@ insert:
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
-		if (!(ev->state & ControlMask)) {
-			savehistory((sel && !(ev->state & ShiftMask))
-				    ? sel->text : text);
+		if (restrict_return) {
+			if (!sel || ev->state & (ShiftMask | ControlMask))
+				break;
+			puts(sel->text);
 			cleanup();
 			exit(0);
 		}
-		if (sel)
-			sel->out = 1;
+		else if (!(ev->state & ControlMask)) {
+			savehistory((sel && !(ev->state & ShiftMask))
+				    ? sel->text : text);
+			for (int i = 0;i < selidsize;i++)
+				if (selid[i] != -1 && (!sel || sel->id != selid[i]))
+					puts(items[selid[i]].text);
+			if (sel && !(ev->state & ShiftMask))
+				puts(sel->text);
+			else
+				puts(text);
+			cleanup();
+			exit(0);
+		}
 		break;
 	case XK_Right:
 		if (columns > 1) {
@@ -964,7 +1002,6 @@ buttonpress(XEvent *e)
 					exit(0);
 				sel = item;
 				if (sel) {
-					sel->out = 1;
 					drawmenu();
 				}
 				return;
@@ -992,7 +1029,6 @@ buttonpress(XEvent *e)
 					exit(0);
 				sel = item;
 				if (sel) {
-					sel->out = 1;
 					drawmenu();
 				}
 				return;
@@ -1049,7 +1085,7 @@ readstdin(void)
 			*p = '\0';
 		if (!(items[i].text = strdup(buf)))
 			die("cannot strdup %u bytes:", strlen(buf) + 1);
-		items[i].out = 0;
+		items[i].id = i; /* for multiselect */
 		drw_font_getexts(drw->fonts, buf, strlen(buf), &tmpmax, NULL);
 		if (tmpmax > inputw) {
 			inputw = tmpmax;
@@ -1325,7 +1361,8 @@ main(int argc, char *argv[])
 		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
-		}
+		} else if (!strcmp(argv[i], "-r"))
+			restrict_return = 1;
 		else if (!strcmp(argv[i], "-R")) /* reject input which results in no match */
 			reject_no_match = 1;
 		else if (!strcmp(argv[i], "-P"))   /* is the input a password */

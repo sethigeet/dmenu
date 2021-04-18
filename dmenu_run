@@ -1,2 +1,10 @@
 #!/bin/sh
-dmenu_path | dmenu -H "${XDG_CACHE_HOME:-$HOME/.cache/}/dmenu_run.hist" "$@" | ${SHELL:-"/bin/sh"} &
+
+# Use this to only allow selection of one entry
+# dmenu_path | dmenu -H "${XDG_CACHE_HOME:-$HOME/.cache/}/dmenu_run.hist" "$@" | ${SHELL:-"/bin/sh"} &
+
+# Use this to only allow selection of multiple entries
+dmenu_path | dmenu "$@" \
+	| while read -r cmd; do
+		echo "$cmd" | xargs setsid -f # TODO: make it simpler (just `setsid -f "$cmd"` doesn't work in all cases)
+	done

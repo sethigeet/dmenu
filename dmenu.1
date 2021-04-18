@@ -3,7 +3,7 @@
 dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
-.RB [ \-bfivPRS ]
+.RB [ \-bfirvPRS ]
 .RB [ \-g
 .IR columns ]
 .RB [ \-l
@@ -71,6 +71,10 @@ is faster, but will lock up X until stdin reaches end\-of\-file.
 .TP
 .B \-i
 dmenu matches menu items case insensitively.
+.TP
+.B \-r
+disables ctr-return and shift-return. this guarantees that dmenu prints to
+stdout only once, and it only prints an item read from stdin.
 .TP
 .B \-P
 dmenu will not directly display the keyboard input, but instead replace it with dots. All data from stdin will be ignored.
