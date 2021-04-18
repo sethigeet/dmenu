@@ -70,7 +70,7 @@ static Drw *drw;
 static Clr *scheme[SchemeLast];
 
 /* Temporary arrays to allow overriding xresources values */
-static char *colortemp[8];
+static char *colortemp[10];
 static char *tempfonts;
 
 static char *histfile;
@@ -1335,6 +1335,14 @@ readxresources(void) {
 			colors[SchemeSelHighlight][ColFg] = strdup(xval.addr);
 		else
 			colors[SchemeSelHighlight][ColFg] = strdup(colors[SchemeSelHighlight][ColFg]);
+		if (XrmGetResource(xdb, "dmenu.outbackground", "*", &type, &xval))
+			colors[SchemeOut][ColBg] = strdup(xval.addr);
+		else
+			colors[SchemeOut][ColBg] = strdup(colors[SchemeOut][ColBg]);
+		if (XrmGetResource(xdb, "dmenu.outforeground", "*", &type, &xval))
+			colors[SchemeOut][ColFg] = strdup(xval.addr);
+		else
+			colors[SchemeOut][ColFg] = strdup(colors[SchemeOut][ColFg]);
 
 		XrmDestroyDatabase(xdb);
 	}
@@ -1455,6 +1463,11 @@ main(int argc, char *argv[])
 	   colors[SchemeSelHighlight][ColFg]  = strdup(colortemp[6]);
 	if ( colortemp[7])
 	   colors[SchemeSelHighlight][ColFg]  = strdup(colortemp[7]);
+
+	if ( colortemp[8])
+	   colors[SchemeOut][ColBg]  = strdup(colortemp[8]);
+	if ( colortemp[9])
+	   colors[SchemeOut][ColFg]  = strdup(colortemp[9]);
 
 	if (!drw_fontset_create(drw, (const char**)fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
