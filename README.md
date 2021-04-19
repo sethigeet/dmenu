@@ -33,10 +33,7 @@ dmenu.outforeground:            FGAlt
 **Defaults**:
 
 - Default font is the system `monospace at 18pt`, meaning the font will match your system font. (This `monospace` font is specified in the `fonts.conf` file on you system which is usually located at `~/.config/fontconfig/fonts.conf`)
-- Default alpha is `0.95 (ie. 95%)` opaque.
 - Default colors which are used are from the [`Ayu Mirage`](https://github.com/ayu-theme/ayu-colors) color scheme
-
-The `alpha` value (for transparency) goes from `0` (transparent) to `1` (opaque).
 
 ## List of all Patches Applied
 
