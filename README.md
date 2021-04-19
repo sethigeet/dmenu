@@ -5,7 +5,10 @@
 ## Bindings for
 
 - **Move around**:
-  - Move around with the arrow keys in the direction you want to go
+  - For **normal people**
+    - Move around with the arrow keys in the direction you want to go
+  - For **vim freaks**
+    - Move around with the `vim` movement keys (ie. h, j, k, l) in the direction you want to go while holding down the `Ctrl` key
 
 ## Colors and UI
 
@@ -75,5 +78,4 @@ Note that some special characters may appear truncated if too wide. You might wa
 
 ## TODO
 
-- Add support for moving around the options using `vim` keys while holding down `ctrl`
 - Add support for setting the `line height` in the `xresources` file
