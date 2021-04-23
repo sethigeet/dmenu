@@ -24,9 +24,13 @@
 
 /* macros */
 #define INTERSECT(x,y,w,h,r)  (MAX(0, MIN((x)+(w),(r).x_org+(r).width)  - MAX((x),(r).x_org)) \
-                             * MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
+                             && MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
 #define LENGTH(X)             (sizeof X / sizeof X[0])
 #define TEXTW(X)              (drw_fontset_getwidth(drw, (X)) + lrpad)
+
+/* define opaqueness */
+#define OPAQUE 0xFFU
+
 #define NUMBERSMAXDIGITS      100
 #define NUMBERSBUFSIZE        (NUMBERSMAXDIGITS * 2) + 1
 
@@ -67,6 +71,10 @@ static Window root, parentwin, win;
 static XIC xic;
 
 static Drw *drw;
+static int usergb = 0;
+static Visual *visual;
+static int depth;
+static Colormap cmap;
 static Clr *scheme[SchemeLast];
 
 /* Temporary arrays to allow overriding xresources values */
@@ -82,6 +90,45 @@ static size_t histsz, histpos;
 static char * cistrstr(const char *s, const char *sub);
 static int (*fstrncmp)(const char *, const char *, size_t) = strncasecmp;
 static char *(*fstrstr)(const char *, const char *) = cistrstr;
+
+static void
+xinitvisual()
+{
+	XVisualInfo *infos;
+	XRenderPictFormat *fmt;
+	int nitems;
+	int i;
+
+	XVisualInfo tpl = {
+		.screen = screen,
+		.depth = 32,
+		.class = TrueColor
+	};
+
+	long masks = VisualScreenMask | VisualDepthMask | VisualClassMask;
+
+	infos = XGetVisualInfo(dpy, masks, &tpl, &nitems);
+	visual = NULL;
+
+	for (i = 0; i < nitems; i++){
+		fmt = XRenderFindVisualFormat(dpy, infos[i].visual);
+		if (fmt->type == PictTypeDirect && fmt->direct.alphaMask) {
+			visual = infos[i].visual;
+			depth = infos[i].depth;
+			cmap = XCreateColormap(dpy, root, visual, AllocNone);
+			usergb = 1;
+			break;
+		}
+	}
+
+	XFree(infos);
+
+	if (!visual) {
+		visual = DefaultVisual(dpy, screen);
+		depth = DefaultDepth(dpy, screen);
+		cmap = DefaultColormap(dpy, screen);
+	}
+}
 
 static int
 issel(size_t id)
@@ -1175,7 +1222,7 @@ setup(void)
 #endif
 	/* init appearance */
 	for (j = 0; j < SchemeLast; j++) {
-		scheme[j] = drw_scm_create(drw, (const char**)colors[j], 2);
+		scheme[j] = drw_scm_create(drw, (const char**)colors[j], (const char**)alphas[j], 2);
 	}
 	for (j = 0; j < SchemeOut; ++j) {
 		for (i = 0; i < 2; ++i)
@@ -1250,11 +1297,13 @@ setup(void)
 	/* create menu window */
 	swa.override_redirect = True;
 	swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
+	swa.border_pixel = 0;
+	swa.colormap = cmap;
 	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask |
 	                 ButtonPressMask;
 	win = XCreateWindow(dpy, parentwin, x, y - (topbar ? 0 : border_width * 2), mw - border_width * 2, mh, border_width,
-	                    CopyFromParent, CopyFromParent, CopyFromParent,
-	                    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
+	                    depth, InputOutput, visual,
+	                    CWOverrideRedirect | CWBackPixel | CWColormap | CWEventMask | CWBorderPixel, &swa);
 	if (border_width)
 		XSetWindowBorder(dpy, win, scheme[SchemeSel][ColBg].pixel);
 	XSetClassHint(dpy, win, &ch);
@@ -1448,7 +1497,8 @@ main(int argc, char *argv[])
 	if (!XGetWindowAttributes(dpy, parentwin, &wa))
 		die("could not get embedding window attributes: 0x%lx",
 		    parentwin);
-	drw = drw_create(dpy, screen, root, wa.width, wa.height);
+	xinitvisual();
+	drw = drw_create(dpy, screen, root, wa.width, wa.height, visual, depth, cmap);
 	readxresources();
 	/* Now we check whether to override xresources with commandline parameters */
 	if ( tempfonts )
