@@ -12,11 +12,11 @@ static const char *prompt = NULL;      /* -p  option; prompt to the left of inpu
 
 static const unsigned int bgalpha = 0xe0;
 static const unsigned int fgalpha = OPAQUE;
-static const char primary_color[] = "#FFCC66";
-static const char accent_color[] = "#BAE67E";
-static const char foreground_color[] = "#101521";
-static const char foreground_alt_color[] = "#CBCCC6";
-static const char background_color[] = "#1F2430";
+static const char primary_color[] = "#7AA2F7";
+static const char accent_color[] = "#9ECE6A";
+static const char foreground_color[] = "#15161E";
+static const char foreground_alt_color[] = "#C0CAF5";
+static const char background_color[] = "#1A1B26";
 
 static const char *colors[SchemeLast][2] = {
 	                /*         fg                bg          */
